@@ -251,6 +251,14 @@ rsvpForm.addEventListener('submit', async (e) => {
 });
 
 // ===== Gallery =====
+const galleryLightboxBody = document.getElementById('galleryLightboxBody');
+const galleryLightboxPrev = document.getElementById('galleryLightboxPrev');
+const galleryLightboxNext = document.getElementById('galleryLightboxNext');
+const galleryLightboxCounter = document.getElementById('galleryLightboxCounter');
+
+let galleryImages = [];
+let currentGalleryIndex = 0;
+
 function enableGalleryImageState() {
   galleryItems.forEach((item) => {
     const image = item.querySelector('.gallery-image');
@@ -275,10 +283,83 @@ function enableGalleryImageState() {
   });
 }
 
-function openGalleryLightbox(src, altText) {
+function collectGalleryImages() {
+  galleryImages = [];
+  document.querySelectorAll('.gallery-item.has-image').forEach((item) => {
+    const img = item.querySelector('.gallery-image');
+    if (img) {
+      galleryImages.push({
+        src: img.currentSrc || img.src,
+        alt: img.alt || 'Preview foto galeri',
+      });
+    }
+  });
+}
+
+function updateLightboxCounter() {
+  if (galleryLightboxCounter) {
+    galleryLightboxCounter.textContent = `${currentGalleryIndex + 1} / ${galleryImages.length}`;
+  }
+}
+
+function showLightboxImage(index, direction) {
+  if (!galleryLightboxImage || index < 0 || index >= galleryImages.length) return;
+
+  const img = galleryLightboxImage;
+  const data = galleryImages[index];
+
+  if (direction) {
+    // Animate out
+    img.classList.add('swipe-transition');
+    img.style.transform = `translateX(${direction === 'left' ? '-40%' : '40%'})`;
+    img.style.opacity = '0';
+
+    setTimeout(() => {
+      img.src = data.src;
+      img.alt = data.alt;
+      // Jump to opposite side instantly
+      img.classList.remove('swipe-transition');
+      img.style.transform = `translateX(${direction === 'left' ? '40%' : '-40%'})`;
+      img.style.opacity = '0';
+
+      // Animate in
+      requestAnimationFrame(() => {
+        img.classList.add('swipe-transition');
+        img.style.transform = 'translateX(0)';
+        img.style.opacity = '1';
+        setTimeout(() => img.classList.remove('swipe-transition'), 350);
+      });
+    }, 200);
+  } else {
+    img.src = data.src;
+    img.alt = data.alt;
+    img.style.transform = 'translateX(0)';
+    img.style.opacity = '1';
+  }
+
+  currentGalleryIndex = index;
+  updateLightboxCounter();
+}
+
+function goToPrevImage() {
+  if (galleryImages.length <= 1) return;
+  const newIndex = (currentGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+  showLightboxImage(newIndex, 'right');
+}
+
+function goToNextImage() {
+  if (galleryImages.length <= 1) return;
+  const newIndex = (currentGalleryIndex + 1) % galleryImages.length;
+  showLightboxImage(newIndex, 'left');
+}
+
+function openGalleryLightbox(index) {
   if (!galleryLightbox || !galleryLightboxImage) return;
-  galleryLightboxImage.src = src;
-  galleryLightboxImage.alt = altText;
+  collectGalleryImages();
+  if (galleryImages.length === 0) return;
+
+  currentGalleryIndex = Math.min(index, galleryImages.length - 1);
+  showLightboxImage(currentGalleryIndex, null);
   galleryLightbox.classList.add('open');
   galleryLightbox.setAttribute('aria-hidden', 'false');
   document.body.classList.add('lightbox-open');
@@ -289,12 +370,15 @@ function closeGalleryLightbox() {
   galleryLightbox.classList.remove('open');
   galleryLightbox.setAttribute('aria-hidden', 'true');
   galleryLightboxImage.src = '';
+  galleryLightboxImage.style.transform = '';
+  galleryLightboxImage.style.opacity = '';
   document.body.classList.remove('lightbox-open');
 }
 
 function initGalleryLightbox() {
   if (!galleryLightbox || !galleryLightboxImage || !galleryLightboxClose) return;
 
+  // Click to open - track which loaded image was clicked
   document.querySelectorAll('.gallery-trigger').forEach((trigger) => {
     trigger.addEventListener('click', () => {
       const image = trigger.querySelector('.gallery-image');
@@ -305,22 +389,134 @@ function initGalleryLightbox() {
         return;
       }
 
-      openGalleryLightbox(image.currentSrc || image.src, image.alt || 'Preview foto galeri');
+      // Find the index among loaded images only
+      collectGalleryImages();
+      const src = image.currentSrc || image.src;
+      const loadedIndex = galleryImages.findIndex(g => g.src === src);
+      openGalleryLightbox(loadedIndex >= 0 ? loadedIndex : 0);
     });
   });
 
+  // Close
   galleryLightboxClose.addEventListener('click', closeGalleryLightbox);
-
   galleryLightbox.addEventListener('click', (e) => {
-    if (e.target === galleryLightbox) {
-      closeGalleryLightbox();
+    if (e.target === galleryLightbox) closeGalleryLightbox();
+  });
+
+  // Prev / Next buttons
+  if (galleryLightboxPrev) galleryLightboxPrev.addEventListener('click', goToPrevImage);
+  if (galleryLightboxNext) galleryLightboxNext.addEventListener('click', goToNextImage);
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (!galleryLightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') closeGalleryLightbox();
+    if (e.key === 'ArrowLeft') goToPrevImage();
+    if (e.key === 'ArrowRight') goToNextImage();
+  });
+
+  // Swipe/drag with touch and mouse (Pointer Events)
+  const swipeArea = galleryLightboxBody || galleryLightbox;
+  const swipeState = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    deltaX: 0,
+    isSwiping: false,
+  };
+
+  function resetSwipeVisual() {
+    galleryLightboxImage.classList.add('swipe-transition');
+    galleryLightboxImage.style.transform = 'translateX(0)';
+    galleryLightboxImage.style.opacity = '1';
+    window.setTimeout(() => {
+      galleryLightboxImage.classList.remove('swipe-transition');
+    }, 350);
+  }
+
+  function finishSwipe() {
+    if (!swipeState.active) return;
+
+    swipeState.active = false;
+    swipeArea.classList.remove('swiping');
+
+    if (!swipeState.isSwiping) {
+      swipeState.deltaX = 0;
+      return;
+    }
+
+    const threshold = 70;
+
+    if (swipeState.deltaX < -threshold && galleryImages.length > 1) {
+      goToNextImage();
+    } else if (swipeState.deltaX > threshold && galleryImages.length > 1) {
+      goToPrevImage();
+    } else {
+      resetSwipeVisual();
+    }
+
+    swipeState.deltaX = 0;
+    swipeState.isSwiping = false;
+  }
+
+  swipeArea.addEventListener('pointerdown', (e) => {
+    if (!galleryLightbox.classList.contains('open')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    swipeState.active = true;
+    swipeState.pointerId = e.pointerId;
+    swipeState.startX = e.clientX;
+    swipeState.startY = e.clientY;
+    swipeState.deltaX = 0;
+    swipeState.isSwiping = false;
+    galleryLightboxImage.classList.remove('swipe-transition');
+
+    if (swipeArea.setPointerCapture) {
+      swipeArea.setPointerCapture(e.pointerId);
     }
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && galleryLightbox.classList.contains('open')) {
-      closeGalleryLightbox();
+  swipeArea.addEventListener('pointermove', (e) => {
+    if (!swipeState.active || e.pointerId !== swipeState.pointerId) return;
+
+    const dx = e.clientX - swipeState.startX;
+    const dy = e.clientY - swipeState.startY;
+
+    if (!swipeState.isSwiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      swipeState.isSwiping = true;
+      swipeArea.classList.add('swiping');
     }
+
+    if (!swipeState.isSwiping) return;
+
+    swipeState.deltaX = dx;
+    const progress = Math.max(-1, Math.min(1, dx / 220));
+    galleryLightboxImage.style.transform = `translateX(${dx * 0.62}px)`;
+    galleryLightboxImage.style.opacity = String(1 - Math.abs(progress) * 0.3);
+
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+  });
+
+  swipeArea.addEventListener('pointerup', (e) => {
+    if (swipeArea.releasePointerCapture && swipeState.pointerId !== null) {
+      try {
+        swipeArea.releasePointerCapture(swipeState.pointerId);
+      } catch (error) {
+        // Ignore release errors when pointer is already released.
+      }
+    }
+    if (e.pointerId !== swipeState.pointerId) return;
+    finishSwipe();
+    swipeState.pointerId = null;
+  });
+
+  swipeArea.addEventListener('pointercancel', () => {
+    finishSwipe();
+    swipeState.pointerId = null;
+    resetSwipeVisual();
   });
 }
 
