@@ -13,6 +13,8 @@ const galleryItems = document.querySelectorAll('.gallery-item');
 const galleryLightbox = document.getElementById('galleryLightbox');
 const galleryLightboxImage = document.getElementById('galleryLightboxImage');
 const galleryLightboxClose = document.getElementById('galleryLightboxClose');
+const MUSIC_YOUTUBE_ID = 'xnrFiwjyr-o';
+const MUSIC_START_SECONDS = 101;
 
 // ===== Open Invitation =====
 btnOpen.addEventListener('click', () => {
@@ -29,6 +31,9 @@ btnOpen.addEventListener('click', () => {
 
   // Start particles
   createParticles();
+
+  // Start music after user interaction
+  setMusicPlayback(true, { showToast: false, isAuto: false });
 });
 
 // ===== Scroll Reveal =====
@@ -355,15 +360,191 @@ document.querySelectorAll('.btn-copy').forEach(btn => {
 
 // ===== Music Toggle =====
 let isPlaying = false;
-musicToggle.addEventListener('click', () => {
-  isPlaying = !isPlaying;
-  if (isPlaying) {
-    musicToggle.classList.add('playing');
-    showToast('Musik diputar (tambahkan file audio Anda)');
-  } else {
-    musicToggle.classList.remove('playing');
+const musicState = {
+  player: null,
+  apiReady: false,
+  apiLoading: false,
+  shouldPlay: false,
+  hasStarted: false,
+  playRequestedByAuto: false,
+  autoplayBlockedNotified: false,
+};
+
+function ensureMusicHostElement() {
+  let host = document.getElementById('youtubePlayerHost');
+
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'youtubePlayerHost';
+    host.style.position = 'fixed';
+    host.style.width = '0';
+    host.style.height = '0';
+    host.style.opacity = '0';
+    host.style.pointerEvents = 'none';
+    host.style.overflow = 'hidden';
+    host.style.bottom = '0';
+    host.style.right = '0';
+
+    const playerEl = document.createElement('div');
+    playerEl.id = 'youtubePlayer';
+    host.appendChild(playerEl);
+    document.body.appendChild(host);
   }
+}
+
+function createYouTubePlayer() {
+  if (!musicState.apiReady || musicState.player) return;
+
+  ensureMusicHostElement();
+
+  musicState.player = new window.YT.Player('youtubePlayer', {
+    width: '1',
+    height: '1',
+    videoId: MUSIC_YOUTUBE_ID,
+    playerVars: {
+      autoplay: 0,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      iv_load_policy: 3,
+      modestbranding: 1,
+      playsinline: 1,
+      rel: 0,
+      start: MUSIC_START_SECONDS,
+      origin: window.location.origin,
+    },
+    events: {
+      onReady: () => {
+        if (musicState.shouldPlay) {
+          playMusicFromYouTube({ isAuto: musicState.playRequestedByAuto });
+        }
+      },
+      onStateChange: (event) => {
+        if (event.data === window.YT.PlayerState.ENDED && isPlaying) {
+          event.target.seekTo(MUSIC_START_SECONDS, true);
+          event.target.playVideo();
+        }
+      },
+      onError: () => {
+        isPlaying = false;
+        musicState.shouldPlay = false;
+        musicState.playRequestedByAuto = false;
+        musicToggle.classList.remove('playing');
+        showToast('Video YouTube tidak bisa diputar. Coba ganti link lagu lain.');
+      },
+    },
+  });
+}
+
+function ensureYouTubeApiLoaded() {
+  if (window.YT && window.YT.Player) {
+    musicState.apiReady = true;
+    createYouTubePlayer();
+    return;
+  }
+
+  if (musicState.apiLoading) return;
+  musicState.apiLoading = true;
+
+  const previousReady = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = () => {
+    if (typeof previousReady === 'function') {
+      previousReady();
+    }
+
+    musicState.apiReady = true;
+    createYouTubePlayer();
+  };
+
+  const apiScript = document.createElement('script');
+  apiScript.src = 'https://www.youtube.com/iframe_api';
+  apiScript.async = true;
+  apiScript.onerror = () => {
+    musicState.apiLoading = false;
+    showToast('Gagal memuat YouTube API. Periksa koneksi internet Anda.');
+  };
+
+  document.head.appendChild(apiScript);
+}
+
+function playMusicFromYouTube(options = {}) {
+  const isAuto = Boolean(options.isAuto);
+  musicState.shouldPlay = true;
+  musicState.playRequestedByAuto = isAuto;
+  ensureYouTubeApiLoaded();
+
+  if (!musicState.player) return;
+
+  if (!musicState.hasStarted) {
+    musicState.player.seekTo(MUSIC_START_SECONDS, true);
+    musicState.hasStarted = true;
+  }
+
+  musicState.player.playVideo();
+
+  if (isAuto) {
+    window.setTimeout(() => {
+      if (!musicState.player || !isPlaying || !musicState.shouldPlay) return;
+      const currentState = musicState.player.getPlayerState
+        ? musicState.player.getPlayerState()
+        : null;
+
+      if (currentState !== window.YT.PlayerState.PLAYING) {
+        isPlaying = false;
+        musicState.shouldPlay = false;
+        musicToggle.classList.remove('playing');
+
+        if (!musicState.autoplayBlockedNotified) {
+          showToast('Autoplay diblokir browser. Klik tombol musik untuk memutar.');
+          musicState.autoplayBlockedNotified = true;
+        }
+      }
+    }, 900);
+  }
+}
+
+function pauseMusicFromYouTube() {
+  musicState.shouldPlay = false;
+  musicState.playRequestedByAuto = false;
+  if (musicState.player) {
+    musicState.player.pauseVideo();
+  }
+}
+
+function setMusicPlayback(shouldPlay, options = {}) {
+  const displayToast = options.showToast !== false;
+  const isAuto = Boolean(options.isAuto);
+
+  if (shouldPlay) {
+    if (isPlaying && musicState.shouldPlay) return;
+    isPlaying = true;
+    musicToggle.classList.add('playing');
+    playMusicFromYouTube({ isAuto });
+
+    if (displayToast) {
+      showToast('Musik diputar dari YouTube (mulai 1:41).');
+    }
+    return;
+  }
+
+  if (!isPlaying && !musicState.shouldPlay) return;
+  isPlaying = false;
+  pauseMusicFromYouTube();
+  musicToggle.classList.remove('playing');
+
+  if (displayToast) {
+    showToast('Musik dijeda.');
+  }
+}
+
+musicToggle.addEventListener('click', () => {
+  setMusicPlayback(!isPlaying, { showToast: true, isAuto: false });
 });
+
+ensureYouTubeApiLoaded();
+window.addEventListener('load', () => {
+  setMusicPlayback(true, { showToast: false, isAuto: true });
+}, { once: true });
 
 // ===== Falling Leaves =====
 function createFallingLeaf() {
