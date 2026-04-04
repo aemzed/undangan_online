@@ -1,0 +1,457 @@
+// ===== DOM Elements =====
+const btnOpen = document.getElementById('btnOpen');
+const mainContent = document.getElementById('mainContent');
+const floatingNav = document.getElementById('floatingNav');
+const cover = document.getElementById('cover');
+const musicToggle = document.getElementById('musicToggle');
+const rsvpForm = document.getElementById('rsvpForm');
+const guestNameInput = document.getElementById('guestName');
+const attendanceInput = document.getElementById('attendance');
+const guestCountInput = document.getElementById('guestCount');
+const rsvpStorageHint = document.getElementById('rsvpStorageHint');
+const galleryItems = document.querySelectorAll('.gallery-item');
+const galleryLightbox = document.getElementById('galleryLightbox');
+const galleryLightboxImage = document.getElementById('galleryLightboxImage');
+const galleryLightboxClose = document.getElementById('galleryLightboxClose');
+
+// ===== Open Invitation =====
+btnOpen.addEventListener('click', () => {
+  mainContent.classList.remove('hidden');
+  floatingNav.classList.remove('hidden');
+
+  // Smooth scroll to first section
+  mainContent.scrollIntoView({ behavior: 'smooth' });
+
+  // Hide cover after scroll
+  setTimeout(() => {
+    cover.style.display = 'none';
+  }, 1000);
+
+  // Start particles
+  createParticles();
+});
+
+// ===== Scroll Reveal =====
+function revealOnScroll() {
+  const reveals = document.querySelectorAll('.reveal');
+  const windowHeight = window.innerHeight;
+
+  reveals.forEach(el => {
+    const elementTop = el.getBoundingClientRect().top;
+    const revealPoint = 120;
+
+    if (elementTop < windowHeight - revealPoint) {
+      el.classList.add('active');
+    }
+  });
+}
+
+window.addEventListener('scroll', revealOnScroll);
+window.addEventListener('load', revealOnScroll);
+
+// ===== Countdown Timer =====
+function updateCountdown() {
+  const weddingDate = new Date('2026-09-20T08:00:00+07:00').getTime();
+  const now = new Date().getTime();
+  const diff = weddingDate - now;
+
+  if (diff <= 0) {
+    document.getElementById('days').textContent = '0';
+    document.getElementById('hours').textContent = '0';
+    document.getElementById('minutes').textContent = '0';
+    document.getElementById('seconds').textContent = '0';
+    return;
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  document.getElementById('days').textContent = days;
+  document.getElementById('hours').textContent = hours;
+  document.getElementById('minutes').textContent = minutes;
+  document.getElementById('seconds').textContent = seconds;
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// ===== RSVP Form =====
+const rsvpConfig = window.RSVP_CONFIG || {};
+const supabaseConfig = {
+  supabaseUrl: (rsvpConfig.supabaseUrl || '').trim(),
+  supabaseAnonKey: (rsvpConfig.supabaseAnonKey || '').trim(),
+  tableName: (rsvpConfig.tableName || 'rsvp_responses').trim(),
+};
+
+function isSupabaseConfigured() {
+  return (
+    supabaseConfig.supabaseUrl.startsWith('https://') &&
+    supabaseConfig.supabaseUrl.includes('.supabase.co') &&
+    supabaseConfig.supabaseAnonKey.length > 20 &&
+    supabaseConfig.tableName.length > 0
+  );
+}
+
+function normalizeGuestName(name) {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function prefillGuestNameFromQuery() {
+  const query = new URLSearchParams(window.location.search);
+  const nameFromLink = query.get('to') || query.get('nama') || '';
+  const cleanedName = normalizeGuestName(nameFromLink);
+
+  if (cleanedName && guestNameInput) {
+    guestNameInput.value = cleanedName;
+  }
+}
+
+function setRsvpStorageHint() {
+  if (!rsvpStorageHint) return;
+
+  if (isSupabaseConfigured()) {
+    rsvpStorageHint.textContent = 'RSVP tersimpan ke database online.';
+    return;
+  }
+
+  rsvpStorageHint.textContent = 'RSVP masih mode lokal browser. Isi konfigurasi Supabase agar tersimpan online.';
+}
+
+function saveRsvpToLocalStorage(payload) {
+  const rsvpData = JSON.parse(localStorage.getItem('rsvpData') || '[]');
+  const localRecord = {
+    name: payload.guest_name,
+    attendance: payload.attendance,
+    count: String(payload.guest_count),
+    date: payload.responded_at,
+  };
+
+  const existingIndex = rsvpData.findIndex(item => (
+    normalizeGuestName(item.name || '').toLowerCase() === payload.guest_name.toLowerCase()
+  ));
+
+  if (existingIndex >= 0) {
+    rsvpData[existingIndex] = localRecord;
+  } else {
+    rsvpData.push(localRecord);
+  }
+
+  localStorage.setItem('rsvpData', JSON.stringify(rsvpData));
+}
+
+async function saveRsvpToSupabase(payload) {
+  const tablePath = encodeURIComponent(supabaseConfig.tableName);
+  const endpoint = `${supabaseConfig.supabaseUrl}/rest/v1/${tablePath}?on_conflict=guest_name`;
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseConfig.supabaseAnonKey,
+      Authorization: `Bearer ${supabaseConfig.supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify([payload]),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Gagal menyimpan RSVP ke Supabase.');
+  }
+}
+
+prefillGuestNameFromQuery();
+setRsvpStorageHint();
+
+rsvpForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const submitBtn = rsvpForm.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn.textContent;
+  const name = normalizeGuestName(guestNameInput.value);
+  const attendance = attendanceInput.value;
+  const count = Number(guestCountInput.value);
+  const respondedAt = new Date().toISOString();
+
+  if (!name) {
+    showToast('Nama tamu wajib diisi.');
+    return;
+  }
+
+  const payload = {
+    guest_name: name,
+    attendance,
+    guest_count: count,
+    responded_at: respondedAt,
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Menyimpan...';
+
+  try {
+    if (isSupabaseConfigured()) {
+      await saveRsvpToSupabase(payload);
+      saveRsvpToLocalStorage(payload);
+    } else {
+      saveRsvpToLocalStorage(payload);
+    }
+
+    const message = attendance === 'hadir'
+      ? `Terima kasih ${name}, kami tunggu kehadiran Anda!`
+      : `Terima kasih ${name}, semoga di lain waktu bisa bertemu.`;
+
+    showToast(message);
+    rsvpForm.reset();
+  } catch (error) {
+    console.error('RSVP submit error:', error);
+    saveRsvpToLocalStorage(payload);
+    showToast('Koneksi database gagal, data disimpan lokal di browser.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalBtnText;
+  }
+});
+
+// ===== Gallery =====
+function enableGalleryImageState() {
+  galleryItems.forEach((item) => {
+    const image = item.querySelector('.gallery-image');
+    if (!image) return;
+
+    const setLoaded = () => {
+      if (image.naturalWidth > 0) {
+        item.classList.add('has-image');
+      } else {
+        item.classList.remove('has-image');
+      }
+    };
+
+    if (image.complete) {
+      setLoaded();
+    }
+
+    image.addEventListener('load', setLoaded);
+    image.addEventListener('error', () => {
+      item.classList.remove('has-image');
+    });
+  });
+}
+
+function openGalleryLightbox(src, altText) {
+  if (!galleryLightbox || !galleryLightboxImage) return;
+  galleryLightboxImage.src = src;
+  galleryLightboxImage.alt = altText;
+  galleryLightbox.classList.add('open');
+  galleryLightbox.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('lightbox-open');
+}
+
+function closeGalleryLightbox() {
+  if (!galleryLightbox || !galleryLightboxImage) return;
+  galleryLightbox.classList.remove('open');
+  galleryLightbox.setAttribute('aria-hidden', 'true');
+  galleryLightboxImage.src = '';
+  document.body.classList.remove('lightbox-open');
+}
+
+function initGalleryLightbox() {
+  if (!galleryLightbox || !galleryLightboxImage || !galleryLightboxClose) return;
+
+  document.querySelectorAll('.gallery-trigger').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const image = trigger.querySelector('.gallery-image');
+      const isImageReady = image && image.naturalWidth > 0;
+
+      if (!isImageReady) {
+        showToast('File foto belum tersedia. Tambahkan dulu di folder assets/gallery.');
+        return;
+      }
+
+      openGalleryLightbox(image.currentSrc || image.src, image.alt || 'Preview foto galeri');
+    });
+  });
+
+  galleryLightboxClose.addEventListener('click', closeGalleryLightbox);
+
+  galleryLightbox.addEventListener('click', (e) => {
+    if (e.target === galleryLightbox) {
+      closeGalleryLightbox();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && galleryLightbox.classList.contains('open')) {
+      closeGalleryLightbox();
+    }
+  });
+}
+
+enableGalleryImageState();
+initGalleryLightbox();
+
+// ===== Wishes Form =====
+const wishesForm = document.getElementById('wishesForm');
+const wishesList = document.getElementById('wishesList');
+
+// Load existing wishes
+function loadWishes() {
+  const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+  wishesList.innerHTML = '';
+  wishes.reverse().forEach(wish => {
+    addWishToList(wish.name, wish.message, wish.date);
+  });
+}
+
+function addWishToList(name, message, date) {
+  const wishItem = document.createElement('div');
+  wishItem.className = 'wish-item';
+
+  const timeAgo = getTimeAgo(new Date(date));
+
+  wishItem.innerHTML = `
+    <p class="wish-item-name">${escapeHtml(name)}</p>
+    <p class="wish-item-message">${escapeHtml(message)}</p>
+    <p class="wish-item-time">${timeAgo}</p>
+  `;
+
+  wishesList.prepend(wishItem);
+}
+
+wishesForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById('wishName').value;
+  const message = document.getElementById('wishMessage').value;
+  const date = new Date().toISOString();
+
+  // Store in localStorage
+  const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+  wishes.push({ name, message, date });
+  localStorage.setItem('wishes', JSON.stringify(wishes));
+
+  addWishToList(name, message, date);
+  showToast('Terima kasih atas ucapan dan doanya!');
+  wishesForm.reset();
+});
+
+loadWishes();
+
+// ===== Copy to Clipboard =====
+document.querySelectorAll('.btn-copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.dataset.copy;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Salin Nomor';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+});
+
+// ===== Music Toggle =====
+let isPlaying = false;
+musicToggle.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  if (isPlaying) {
+    musicToggle.classList.add('playing');
+    showToast('Musik diputar (tambahkan file audio Anda)');
+  } else {
+    musicToggle.classList.remove('playing');
+  }
+});
+
+// ===== Falling Leaves =====
+function createFallingLeaf() {
+  const colors = ['#6B8F6B', '#8FA98F', '#B5CCB5', '#4A6741', '#C4937A'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const size = Math.random() * 16 + 14;
+  const duration = Math.random() * 6 + 6;
+  const delay = Math.random() * 2;
+
+  const leaf = document.createElement('div');
+  leaf.className = 'falling-leaf';
+  leaf.style.left = Math.random() * 100 + 'vw';
+  leaf.style.setProperty('--leaf-size', size + 'px');
+  leaf.style.setProperty('--fall-duration', duration + 's');
+  leaf.style.setProperty('--fall-delay', delay + 's');
+
+  leaf.innerHTML = `<svg viewBox="0 0 24 24" fill="${color}" opacity="0.5">
+    <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c4 0 8.56-3.88 9-10z"/>
+    <path d="M12.47 2.19C11 3.42 9.28 5.5 8.87 8c1.43-.73 3.08-1.2 5.13-1.54V2.19z" opacity="0.7"/>
+  </svg>`;
+
+  document.body.appendChild(leaf);
+
+  setTimeout(() => {
+    leaf.remove();
+  }, (duration + delay) * 1000 + 500);
+}
+
+function createParticles() {
+  // Initial burst of leaves
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => createFallingLeaf(), i * 600);
+  }
+
+  // Keep creating leaves periodically
+  setInterval(() => {
+    createFallingLeaf();
+  }, 2500);
+}
+
+// ===== Smooth Scroll for Nav Links =====
+document.querySelectorAll('.nav-item').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+});
+
+// ===== Utility Functions =====
+function showToast(message) {
+  // Remove existing toast
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Baru saja';
+  if (diffMins < 60) return `${diffMins} menit yang lalu`;
+  if (diffHours < 24) return `${diffHours} jam yang lalu`;
+  if (diffDays < 30) return `${diffDays} hari yang lalu`;
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}

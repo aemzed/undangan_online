@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Undangan Pernikahan Adit & Arsya</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+    <!-- SVG Definitions for Batik & Nature patterns -->
+    <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Batik Kawung Pattern -->
+        <pattern id="batikKawung" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+          <rect width="60" height="60" fill="none"/>
+          <ellipse cx="30" cy="30" rx="12" ry="18" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.15" transform="rotate(0,30,30)"/>
+          <ellipse cx="30" cy="30" rx="12" ry="18" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.15" transform="rotate(60,30,30)"/>
+          <ellipse cx="30" cy="30" rx="12" ry="18" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.15" transform="rotate(120,30,30)"/>
+          <circle cx="30" cy="30" r="4" fill="currentColor" opacity="0.08"/>
+          <circle cx="0" cy="0" r="4" fill="currentColor" opacity="0.08"/>
+          <circle cx="60" cy="0" r="4" fill="currentColor" opacity="0.08"/>
+          <circle cx="0" cy="60" r="4" fill="currentColor" opacity="0.08"/>
+          <circle cx="60" cy="60" r="4" fill="currentColor" opacity="0.08"/>
+        </pattern>
+
+        <!-- Batik Parang Pattern -->
+        <pattern id="batikParang" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+          <rect width="50" height="50" fill="none"/>
+          <path d="M0 25 Q12.5 12.5 25 25 Q37.5 37.5 50 25" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.12"/>
+          <path d="M0 0 Q12.5 -12.5 25 0 Q37.5 12.5 50 0" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.12" transform="translate(0,50)"/>
+          <circle cx="12.5" cy="18" r="2" fill="currentColor" opacity="0.06"/>
+          <circle cx="37.5" cy="32" r="2" fill="currentColor" opacity="0.06"/>
+        </pattern>
+
+        <!-- Tropical Leaf Pattern -->
+        <pattern id="leafPattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+          <rect width="120" height="120" fill="none"/>
+          <path d="M20 100 Q30 60 60 50 Q40 70 35 100Z" fill="currentColor" opacity="0.04"/>
+          <path d="M80 20 Q90 50 70 80 Q85 55 95 25Z" fill="currentColor" opacity="0.04"/>
+          <path d="M10 30 Q25 20 40 35 Q25 30 15 40Z" fill="currentColor" opacity="0.03"/>
+          <path d="M90 90 Q105 80 110 95 Q100 88 92 98Z" fill="currentColor" opacity="0.03"/>
+        </pattern>
+      </defs>
+    </svg>
+
+    <!-- Music Toggle -->
+    <button class="music-toggle" id="musicToggle" aria-label="Toggle Music">
+      <svg class="music-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+      </svg>
+    </button>
+
+    <!-- Opening / Cover -->
+    <section class="section cover" id="cover">
+      <div class="cover-batik-overlay"></div>
+      <div class="cover-leaves">
+        <div class="leaf leaf-1"></div>
+        <div class="leaf leaf-2"></div>
+        <div class="leaf leaf-3"></div>
+        <div class="leaf leaf-4"></div>
+        <div class="leaf leaf-5"></div>
+        <div class="leaf leaf-6"></div>
+      </div>
+      <div class="cover-content">
+        <div class="cover-frame">
+          <div class="frame-corner frame-tl"></div>
+          <div class="frame-corner frame-tr"></div>
+          <div class="frame-corner frame-bl"></div>
+          <div class="frame-corner frame-br"></div>
+          <p class="cover-label fade-in">The Wedding of</p>
+          <h1 class="cover-names fade-in delay-1">
+            Adit <span class="amp">&</span> Arsya
+          </h1>
+          <div class="cover-divider fade-in delay-2">
+            <span class="divider-leaf">&#127807;</span>
+          </div>
+          <p class="cover-date fade-in delay-2">Sabtu, 20 September 2026</p>
+          <button class="btn-open fade-in delay-3" id="btnOpen">
+            Buka Undangan
+          </button>
+        </div>
+      </div>
+      <div class="scroll-hint fade-in delay-3">
+        <div class="scroll-arrow"></div>
+      </div>
+    </section>
+
+    <!-- Main Content (hidden until opened) -->
+    <div id="mainContent" class="main-content hidden">
+
+      <!-- Bismillah -->
+      <section class="section bismillah">
+        <div class="batik-bg batik-kawung"></div>
+        <div class="container">
+          <div class="nature-ornament reveal">
+            <svg viewBox="0 0 200 30" class="ornament-svg">
+              <path d="M100 28 Q90 10 70 15 Q80 5 100 2 Q120 5 130 15 Q110 10 100 28Z" fill="var(--primary)" opacity="0.3"/>
+              <path d="M100 28 Q95 15 85 18 Q90 10 100 8 Q110 10 115 18 Q105 15 100 28Z" fill="var(--primary)" opacity="0.5"/>
+              <line x1="20" y1="15" x2="80" y2="15" stroke="var(--gold)" stroke-width="0.5" opacity="0.5"/>
+              <line x1="120" y1="15" x2="180" y2="15" stroke="var(--gold)" stroke-width="0.5" opacity="0.5"/>
+            </svg>
+          </div>
+          <p class="bismillah-text reveal">Bismillahirrahmanirrahim</p>
+          <p class="ayat reveal">
+            "Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan
+            untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa
+            tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan
+            sayang."
+          </p>
+          <p class="ayat-source reveal">QS. Ar-Rum: 21</p>
+          <div class="nature-ornament ornament-flip reveal">
+            <svg viewBox="0 0 200 30" class="ornament-svg">
+              <path d="M100 28 Q90 10 70 15 Q80 5 100 2 Q120 5 130 15 Q110 10 100 28Z" fill="var(--primary)" opacity="0.3"/>
+              <path d="M100 28 Q95 15 85 18 Q90 10 100 8 Q110 10 115 18 Q105 15 100 28Z" fill="var(--primary)" opacity="0.5"/>
+              <line x1="20" y1="15" x2="80" y2="15" stroke="var(--gold)" stroke-width="0.5" opacity="0.5"/>
+              <line x1="120" y1="15" x2="180" y2="15" stroke="var(--gold)" stroke-width="0.5" opacity="0.5"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mempelai -->
+      <section class="section couple" id="couple">
+        <div class="batik-bg batik-parang"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Mempelai
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+          <div class="couple-wrapper">
+            <div class="couple-card reveal">
+              <div class="couple-photo">
+                <div class="photo-placeholder groom">A</div>
+              </div>
+              <h3 class="couple-name">Adit</h3>
+              <p class="couple-fullname">Aditya Maulana Zunaidi</p>
+              <p class="couple-parent">Putra dari Bapak Surya & Ibu Kartini</p>
+            </div>
+
+            <div class="couple-divider reveal">
+              <div class="divider-circle">
+                <span class="amp-large">&</span>
+              </div>
+            </div>
+
+            <div class="couple-card reveal">
+              <div class="couple-photo">
+                <div class="photo-placeholder bride">A</div>
+              </div>
+              <h3 class="couple-name">Arsya</h3>
+              <p class="couple-fullname">Delviana Arsya Nur Cahya</p>
+              <p class="couple-parent">Putri dari Bapak Ahmad & Ibu Sari</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Acara -->
+      <section class="section event" id="event">
+        <div class="batik-bg batik-kawung"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Waktu & Tempat
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+
+          <div class="event-wrapper">
+            <div class="event-card reveal">
+              <div class="event-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <h3>Akad Nikah</h3>
+              <p class="event-date">Sabtu, 20 September 2026</p>
+              <p class="event-time">Pukul 08:00 - 10:00 WIB</p>
+              <p class="event-location">Masjid Al-Ikhlas</p>
+              <p class="event-address">Jl. Mawar No. 10, Jakarta Selatan</p>
+            </div>
+
+            <div class="event-card reveal">
+              <div class="event-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <h3>Resepsi</h3>
+              <p class="event-date">Sabtu, 20 September 2026</p>
+              <p class="event-time">Pukul 11:00 - 14:00 WIB</p>
+              <p class="event-location">Ballroom Hotel Grand Hyatt</p>
+              <p class="event-address">Jl. Sudirman No. 28, Jakarta Pusat</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Countdown -->
+      <section class="section countdown" id="countdown">
+        <div class="countdown-leaves">
+          <div class="leaf leaf-1"></div>
+          <div class="leaf leaf-3"></div>
+          <div class="leaf leaf-5"></div>
+        </div>
+        <div class="container">
+          <h2 class="section-title reveal">Menghitung Hari</h2>
+          <div class="countdown-wrapper reveal">
+            <div class="countdown-item">
+              <div class="countdown-box">
+                <span class="countdown-number" id="days">0</span>
+              </div>
+              <span class="countdown-label">Hari</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <div class="countdown-box">
+                <span class="countdown-number" id="hours">0</span>
+              </div>
+              <span class="countdown-label">Jam</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <div class="countdown-box">
+                <span class="countdown-number" id="minutes">0</span>
+              </div>
+              <span class="countdown-label">Menit</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <div class="countdown-box">
+                <span class="countdown-number" id="seconds">0</span>
+              </div>
+              <span class="countdown-label">Detik</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gallery -->
+      <section class="section gallery" id="gallery">
+        <div class="batik-bg batik-parang"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Galeri Kami
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+          <p class="gallery-hint reveal">Klik foto untuk memperbesar.</p>
+          <div class="gallery-grid reveal">
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 1">
+                <img class="gallery-image" src="assets/gallery/foto-1.jpg" alt="Foto galeri 1" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 1</span></div>
+              </button>
+            </div>
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 2">
+                <img class="gallery-image" src="assets/gallery/foto-2.jpg" alt="Foto galeri 2" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 2</span></div>
+              </button>
+            </div>
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 3">
+                <img class="gallery-image" src="assets/gallery/foto-3.jpg" alt="Foto galeri 3" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 3</span></div>
+              </button>
+            </div>
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 4">
+                <img class="gallery-image" src="assets/gallery/foto-4.jpg" alt="Foto galeri 4" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 4</span></div>
+              </button>
+            </div>
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 5">
+                <img class="gallery-image" src="assets/gallery/foto-5.jpg" alt="Foto galeri 5" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 5</span></div>
+              </button>
+            </div>
+            <div class="gallery-item">
+              <button class="gallery-trigger" type="button" aria-label="Buka foto 6">
+                <img class="gallery-image" src="assets/gallery/foto-6.jpg" alt="Foto galeri 6" loading="lazy" />
+                <div class="gallery-placeholder" aria-hidden="true"><span>Foto 6</span></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RSVP -->
+      <section class="section rsvp" id="rsvp">
+        <div class="batik-bg batik-kawung"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Konfirmasi Kehadiran
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+          <form class="rsvp-form reveal" id="rsvpForm">
+            <div class="form-group">
+              <input type="text" id="guestName" placeholder="Nama Lengkap" required />
+            </div>
+            <div class="form-group">
+              <select id="attendance" required>
+                <option value="" disabled selected>Konfirmasi Kehadiran</option>
+                <option value="hadir">Insya Allah Hadir</option>
+                <option value="tidak">Maaf, Tidak Bisa Hadir</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <select id="guestCount">
+                <option value="1">1 Orang</option>
+                <option value="2">2 Orang</option>
+                <option value="3">3 Orang</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-rsvp">Kirim Konfirmasi</button>
+          </form>
+          <p class="rsvp-note reveal" id="rsvpStorageHint"></p>
+        </div>
+      </section>
+
+      <!-- Wishes -->
+      <section class="section wishes" id="wishes">
+        <div class="batik-bg batik-parang"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Ucapan & Doa
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+          <form class="wishes-form reveal" id="wishesForm">
+            <div class="form-group">
+              <input type="text" id="wishName" placeholder="Nama Anda" required />
+            </div>
+            <div class="form-group">
+              <textarea id="wishMessage" placeholder="Tulis ucapan dan doa untuk kedua mempelai..." rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn-wish">Kirim Ucapan</button>
+          </form>
+          <div class="wishes-list" id="wishesList"></div>
+        </div>
+      </section>
+
+      <!-- Gift -->
+      <section class="section gift" id="gift">
+        <div class="batik-bg batik-kawung"></div>
+        <div class="container">
+          <h2 class="section-title reveal">
+            <span class="title-leaf title-leaf-l">&#127811;</span>
+            Hadiah Digital
+            <span class="title-leaf title-leaf-r">&#127811;</span>
+          </h2>
+          <p class="gift-text reveal">
+            Doa restu Anda merupakan karunia yang sangat berarti bagi kami.
+            Namun, jika Anda ingin memberikan tanda kasih, kami menyediakan opsi berikut:
+          </p>
+          <div class="gift-wrapper reveal">
+            <div class="gift-card">
+              <h4>Bank BCA</h4>
+              <p class="gift-number">1234567890</p>
+              <p class="gift-name">a.n. Muhammad Adit Pratama</p>
+              <button class="btn-copy" data-copy="1234567890">Salin Nomor</button>
+            </div>
+            <div class="gift-card">
+              <h4>Bank Mandiri</h4>
+              <p class="gift-number">0987654321</p>
+              <p class="gift-name">a.n. Arsya Putri Ramadhani</p>
+              <button class="btn-copy" data-copy="0987654321">Salin Nomor</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-leaves">
+          <div class="leaf leaf-2"></div>
+          <div class="leaf leaf-4"></div>
+        </div>
+        <div class="container">
+          <div class="nature-ornament reveal">
+            <svg viewBox="0 0 200 30" class="ornament-svg">
+              <path d="M100 28 Q90 10 70 15 Q80 5 100 2 Q120 5 130 15 Q110 10 100 28Z" fill="#E8C4B0" opacity="0.5"/>
+              <line x1="20" y1="15" x2="80" y2="15" stroke="#E8C4B0" stroke-width="0.5" opacity="0.4"/>
+              <line x1="120" y1="15" x2="180" y2="15" stroke="#E8C4B0" stroke-width="0.5" opacity="0.4"/>
+            </svg>
+          </div>
+          <p class="thank-you">Terima Kasih</p>
+          <h2 class="footer-names">Adit & Arsya</h2>
+          <p class="footer-text">
+            Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila
+            Bapak/Ibu/Saudara/i berkenan hadir untuk memberikan doa restu.
+          </p>
+          <p class="copyright">&copy; 2026 Adit & Arsya</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Floating Nav -->
+    <nav class="floating-nav hidden" id="floatingNav">
+      <a href="#couple" class="nav-item" title="Mempelai">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+        </svg>
+      </a>
+      <a href="#event" class="nav-item" title="Acara">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      </a>
+      <a href="#rsvp" class="nav-item" title="RSVP">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+      </a>
+      <a href="#wishes" class="nav-item" title="Ucapan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </svg>
+      </a>
+      <a href="#gift" class="nav-item" title="Hadiah">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 12 20 22 4 22 4 12" />
+          <rect x="2" y="7" width="20" height="5" />
+          <line x1="12" y1="22" x2="12" y2="7" />
+          <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" />
+          <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
+        </svg>
+      </a>
+    </nav>
+
+    <div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
+      <button class="gallery-lightbox-close" id="galleryLightboxClose" aria-label="Tutup preview foto">
+        &times;
+      </button>
+      <div class="gallery-lightbox-body">
+        <img id="galleryLightboxImage" src="" alt="Preview foto galeri" />
+      </div>
+    </div>
+
+    <script>
+      window.RSVP_CONFIG = {
+        supabaseUrl: '',
+        supabaseAnonKey: '',
+        tableName: 'rsvp_responses',
+      };
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>
