@@ -37,22 +37,53 @@ btnOpen.addEventListener('click', () => {
 });
 
 // ===== Scroll Reveal =====
+const revealSelectors = '.reveal, .reveal-left, .reveal-right, .reveal-zoom';
+
 function revealOnScroll() {
-  const reveals = document.querySelectorAll('.reveal');
+  const reveals = document.querySelectorAll(revealSelectors);
   const windowHeight = window.innerHeight;
 
   reveals.forEach(el => {
     const elementTop = el.getBoundingClientRect().top;
-    const revealPoint = 120;
+    const revealPoint = windowHeight * 0.88;
 
-    if (elementTop < windowHeight - revealPoint) {
+    if (elementTop < revealPoint) {
       el.classList.add('active');
     }
   });
 }
 
-window.addEventListener('scroll', revealOnScroll);
-window.addEventListener('load', revealOnScroll);
+// Use IntersectionObserver if available for better performance
+if ('IntersectionObserver' in window) {
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.08,
+    rootMargin: '0px 0px -60px 0px'
+  });
+
+  function observeReveals() {
+    document.querySelectorAll(revealSelectors).forEach(el => {
+      if (!el.classList.contains('active')) {
+        revealObserver.observe(el);
+      }
+    });
+  }
+
+  window.addEventListener('load', observeReveals);
+  // Re-observe after main content is shown
+  btnOpen.addEventListener('click', () => {
+    setTimeout(observeReveals, 100);
+  });
+} else {
+  window.addEventListener('scroll', revealOnScroll);
+  window.addEventListener('load', revealOnScroll);
+}
 
 // ===== Countdown Timer =====
 function updateCountdown() {

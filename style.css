@@ -197,16 +197,97 @@ body {
   }
 }
 
+/* --- Base reveal (pop up from bottom + scale) --- */
 .reveal {
   opacity: 0;
-  transform: translateY(40px);
-  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(60px) scale(0.92);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
 .reveal.active {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
+
+/* --- Direction variants --- */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-60px) scale(0.94);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-left.active {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(60px) scale(0.94);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-right.active {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.reveal-zoom {
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-zoom.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --- Stagger delays for children --- */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-stagger.active > * {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.reveal-stagger > *:nth-child(1) { transition-delay: 0.05s; }
+.reveal-stagger > *:nth-child(2) { transition-delay: 0.12s; }
+.reveal-stagger > *:nth-child(3) { transition-delay: 0.2s; }
+.reveal-stagger > *:nth-child(4) { transition-delay: 0.28s; }
+.reveal-stagger > *:nth-child(5) { transition-delay: 0.36s; }
+.reveal-stagger > *:nth-child(6) { transition-delay: 0.44s; }
+.reveal-stagger > *:nth-child(7) { transition-delay: 0.52s; }
+
+/* --- Sequential delay via data-delay --- */
+.reveal[data-delay="1"] { transition-delay: 0.1s; }
+.reveal[data-delay="2"] { transition-delay: 0.2s; }
+.reveal[data-delay="3"] { transition-delay: 0.3s; }
+.reveal[data-delay="4"] { transition-delay: 0.4s; }
+.reveal-left[data-delay="1"] { transition-delay: 0.1s; }
+.reveal-left[data-delay="2"] { transition-delay: 0.2s; }
+.reveal-right[data-delay="1"] { transition-delay: 0.1s; }
+.reveal-right[data-delay="2"] { transition-delay: 0.2s; }
+.reveal-zoom[data-delay="1"] { transition-delay: 0.15s; }
+.reveal-zoom[data-delay="2"] { transition-delay: 0.3s; }
 
 /* ===== Nature Ornaments ===== */
 .nature-ornament {
@@ -217,11 +298,14 @@ body {
 .nature-ornament.ornament-flip {
   margin-bottom: 0;
   margin-top: 30px;
-  transform: scaleY(-1);
 }
 
-.nature-ornament.ornament-flip.active {
-  transform: scaleY(-1) translateY(0);
+.nature-ornament.ornament-flip.reveal-zoom {
+  transform: scaleY(-1) scale(0.6);
+}
+
+.nature-ornament.ornament-flip.reveal-zoom.active {
+  transform: scaleY(-1) scale(1);
 }
 
 .ornament-svg {
@@ -1705,14 +1789,20 @@ body.lightbox-open {
 /* --- Reduce motion for accessibility --- */
 @media (prefers-reduced-motion: reduce) {
   .fade-in,
-  .reveal {
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .reveal-zoom {
     animation: none;
     transition: none;
     opacity: 1;
     transform: none;
   }
 
-  .reveal.active {
+  .reveal.active,
+  .reveal-left.active,
+  .reveal-right.active,
+  .reveal-zoom.active {
     opacity: 1;
     transform: none;
   }
