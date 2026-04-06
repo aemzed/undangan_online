@@ -240,6 +240,17 @@ rsvpForm.addEventListener('submit', async (e) => {
 
     showToast(message);
     rsvpForm.reset();
+
+    // Kirim konfirmasi via WhatsApp
+    const waNumber = window.RSVP_CONFIG?.whatsappNumber;
+    if (waNumber) {
+      const statusText = attendance === 'hadir'
+        ? `hadir (${count} orang)`
+        : 'tidak bisa hadir';
+      const waMessage = `Halo, saya *${name}* ingin mengkonfirmasi kehadiran undangan:\n\nStatus: *${statusText}*\n\nTerima kasih.`;
+      const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
+      window.open(waUrl, '_blank');
+    }
   } catch (error) {
     console.error('RSVP submit error:', error);
     saveRsvpToLocalStorage(payload);
