@@ -241,33 +241,15 @@ rsvpForm.addEventListener('submit', async (e) => {
     showToast(message);
     rsvpForm.reset();
 
-    // Kirim konfirmasi via WhatsApp (Fonnte API)
-    const waNumber = window.RSVP_CONFIG?.whatsappNumber;
-    const fonnteToken = window.RSVP_CONFIG?.fonnteToken;
-    if (waNumber && fonnteToken) {
+    // Kirim konfirmasi via WhatsApp (melalui Cloudflare Worker)
+    const waWorkerUrl = window.RSVP_CONFIG?.waWorkerUrl;
+    if (waWorkerUrl) {
       const statusText = attendance === 'hadir'
         ? `hadir (${count} orang)`
         : 'tidak bisa hadir';
       const waMessage = `Halo, saya *${name}* ingin mengkonfirmasi kehadiran undangan:\n\nStatus: *${statusText}*\n\nTerima kasih.`;
-
-      const formData = new FormData();
-      formData.append('target', waNumber);
-      formData.append('message', waMessage);
-
-      fetch('https://api.fonnte.com/send', {
-        method: 'POST',
-        headers: { Authorization: fonnteToken },
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status) {
-            console.log('WA konfirmasi terkirim via Fonnte');
-          } else {
-            console.warn('Fonnte gagal kirim:', data.reason);
-          }
-        })
-        .catch((err) => console.error('Fonnte error:', err));
+      const redirectUrl = `${waWorkerUrl}?message=${encodeURIComponent(waMessage)}`;
+      window.open(redirectUrl, '_blank');
     }
   } catch (error) {
     console.error('RSVP submit error:', error);

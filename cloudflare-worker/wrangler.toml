@@ -1,0 +1,6 @@
+name = "undangan-wa-redirect"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+WHATSAPP_NUMBER = "6285931504125"
