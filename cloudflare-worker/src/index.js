@@ -1,28 +1,15 @@
 export default {
-  async fetch(request, env) {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
-    }
+  async fetch(request) {
+    const WHATSAPP_NUMBER = '6285931504125';
 
     const url = new URL(request.url);
     const message = url.searchParams.get('message');
 
     if (!message) {
-      return new Response(JSON.stringify({ error: 'Parameter "message" wajib diisi' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
+      return new Response('Parameter message wajib diisi', { status: 400 });
     }
 
-    const waUrl = `https://api.whatsapp.com/send/?phone=${env.WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
-
+    const waUrl = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
     return Response.redirect(waUrl, 302);
   },
 };
